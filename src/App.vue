@@ -11,15 +11,11 @@
         <!-- Table Controls -->
         <div class="flex justify-between items-center mb-6">
           <h2 class="text-xl font-semibold">Document Requirements</h2>
-          <button
-            @click="addNewRow"
-            class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors capitalize"
-          >
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-            </svg>
-            Add New Requirement
-          </button>
+
+          <!-- Statistics -->
+          <div v-if="rows.length > 0" class="mt-6 text-sm text-gray-600">
+            Total requirements: {{ rows.length }} | Required: {{ requiredCount }} | Optional: {{ optionalCount }}
+          </div>
         </div>
 
         <!-- Table -->
@@ -36,7 +32,8 @@
             </thead>
             <tbody>
               <!-- Dynamic Row Components -->
-              <table-row
+              <component
+                :is="TableRow"
                 v-for="(row, index) in rows"
                 :key="row.id"
                 :row-data="row"
@@ -63,16 +60,21 @@
           </div>
         </div>
 
-        <!-- Statistics -->
-        <div v-if="rows.length > 0" class="mt-6 text-sm text-gray-600">
-          Total requirements: {{ rows.length }} | Required: {{ requiredCount }} | Optional: {{ optionalCount }}
-        </div>
+        <button
+          @click="addNewRow"
+          class="flex items-center mt-8 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors capitalize"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+          Add New Requirement
+        </button>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from "vue";
 import TableRow from "./components/TableRow.vue";
 
@@ -103,18 +105,26 @@ const addNewRow = () => {
   rows.value.push(newRow);
 };
 
+interface RowData {
+  id: number;
+  text: string;
+  type: "required" | "optional";
+  checkbox: boolean;
+  dropdown: string;
+}
+
 // Update a specific row
-const updateRow = (index, updatedData) => {
+const updateRow = (index: number, updatedData: Partial<RowData>) => {
   rows.value[index] = { ...rows.value[index], ...updatedData };
 };
 
 // Remove a specific row
-const removeRow = (index) => {
+const removeRow = (index: number) => {
   rows.value.splice(index, 1);
 };
 
 // Log item to console
-const logItem = (index) => {
+const logItem = (index: number) => {
   const item = rows.value[index];
   console.log(`Item ${index + 1}:`, item);
 };
