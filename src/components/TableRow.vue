@@ -54,11 +54,7 @@
     <td class="py-4 px-4 border-b">
       <div class="flex justify-center space-x-2">
         <!-- Log Button -->
-        <button
-          @click="logItem"
-          class="flex items-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          title="Log to Console"
-        >
+        <button @click="logItem" class="flex items-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors" title="Log to Console">
           <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -71,11 +67,7 @@
         </button>
 
         <!-- Delete Button -->
-        <button
-          @click="$emit('remove:row', index)"
-          class="flex items-center p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          title="Delete Requirement"
-        >
+        <button @click="$emit('remove:row', index)" class="flex items-center p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete Requirement">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
