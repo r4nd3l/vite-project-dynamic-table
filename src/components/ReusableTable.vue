@@ -32,8 +32,8 @@ const props = defineProps<{ config: TableConfig }>();
 const cfg = computed(() => props.config ?? ({} as TableConfig));
 
 // grid conf
-const rowCount = computed(() => cfg.value.data?.length ?? cfg.value.rows ?? 0);
-const colCount = computed(() => cfg.value.data?.[0]?.length ?? cfg.value.cols ?? 0);
+const rowCount = computed(() => Math.max(cfg.value.data?.length ?? 0, cfg.value.rows ?? 0));
+const colCount = computed(() => Math.max(cfg.value.data?.[0]?.length ?? 0, cfg.value.cols ?? 0));
 
 const headerLabel = (c: number) => {
   const h = cfg.value.headers;
