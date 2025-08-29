@@ -1,19 +1,23 @@
 <template>
-  <div class="rt-wrap">
-    <table :class="['rt', config.className, borderColorClass]" :style="tableStyle">
-      <colgroup v-if="colCount">
-        <col v-for="c in colCount" :key="c" :style="colStyle(c - 1)" />
-      </colgroup>
+  <div :class="classList(cfg.wrapperClass)">
+    <table :class="['rt', ...classList(cfg.tableClass)]">
+      <thead v-if="cfg.showHeader">
+        <tr>
+          <th v-for="c in colCount" :key="c" :class="headerClassOf(c - 1)">
+            <slot name="header" :col="c - 1" :label="headerLabel(c - 1)">
+              {{ headerLabel(c - 1) }}
+            </slot>
+          </th>
+        </tr>
+      </thead>
 
       <tbody>
-        <tr v-for="r in rowCount" :key="r" :style="rowStyle(r - 1)">
-          <template v-for="c in colCount" :key="c">
-            <td :class="cellClass(r - 1, c - 1)" :style="cellStyle(r - 1, c - 1)">
-              <slot name="cell" :row="r - 1" :col="c - 1" :value="cellValue(r - 1, c - 1)">
-                {{ cellValue(r - 1, c - 1) }}
-              </slot>
-            </td>
-          </template>
+        <tr v-for="r in rowCount" :key="r" :class="rowClassOf(r - 1)">
+          <td v-for="c in colCount" :key="c" :class="cellClassOf(r - 1, c - 1)">
+            <slot name="cell" :row="r - 1" :col="c - 1" :value="cellValue(r - 1, c - 1)">
+              {{ cellValue(r - 1, c - 1) }}
+            </slot>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -22,228 +26,87 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import type { TableConfig, Dim, Align } from "../types/ReusableTableTypes";
+import type { ClassList, PerColClassList, PerRowClassList, TableConfig } from "../types/ReusableTableTypes";
+// (types are already declared above, no need to import)
 
 const props = defineProps<{ config: TableConfig }>();
 const cfg = computed(() => props.config ?? ({} as TableConfig));
 
-// ---- grid shape ------------------------------------------------------------
+// --- grid shape -------------------------------------------------------------
 const rowCount = computed(() => cfg.value.data?.length ?? cfg.value.rows ?? 0);
 const colCount = computed(() => cfg.value.data?.[0]?.length ?? cfg.value.cols ?? 0);
 
-// fallback content factory
-const defaultFactory = (r: number, c: number) => {
+function headerLabel(c: number) {
+  const h = cfg.value.headers;
+  if (h && typeof h[c] !== "undefined" && h[c] !== null) return String(h[c]);
+  return `Col ${c + 1}`;
+}
+
+function defaultContent(r: number, c: number) {
   const dc = cfg.value.defaultContent;
   if (typeof dc === "function") return dc(r, c);
   if (typeof dc === "string") return dc;
-  return "";
-};
+  return `R${r + 1}C${c + 1}`;
+}
 
 function cellValue(r: number, c: number) {
   const d = cfg.value.data;
-  if (d && d[r] && typeof d[r][c] !== "undefined") return d[r][c];
-  return defaultFactory(r, c);
+  if (d && d[r] && typeof d[r][c] !== "undefined" && d[r][c] !== null) return d[r][c];
+  return defaultContent(r, c);
 }
 
-// ---- utils -----------------------------------------------------------------
-const toPx = (d?: Dim) => {
-  if (d == null) return undefined;
-  return typeof d === "number" ? `${d}px` : String(d);
-};
+// --- class helpers ----------------------------------------------------------
+function toClassArray(token?: ClassList): string[] {
+  if (!token) return [];
+  if (Array.isArray(token)) return token.flatMap((v) => String(v).split(/\s+/).filter(Boolean));
+  return String(token).split(/\s+/).filter(Boolean);
+}
 
-// pick value from single / 1D / 2D tokens
-function pick<T>(token: T | T[] | T[][] | undefined, r: number, c: number): T | undefined {
-  if (token == null) return undefined;
-  if (Array.isArray(token)) {
-    if (Array.isArray(token[0])) {
-      // matrix
-      const m = token as T[][];
-      return m[r] && typeof m[r][c] !== "undefined" ? m[r][c] : undefined;
-    } else {
-      // Heuristic: for widths/align -> treat as per-column; for bg/color/rowHeights -> per-row.
-      // We'll switch based on the field at call sites by passing rowFirst: true/false if needed.
-      // Here we assume call sites choose which index to use.
-      return undefined as any;
-    }
+function classList(token?: ClassList): string[] {
+  return toClassArray(token);
+}
+
+function pickRowClass(token?: ClassList | PerRowClassList, r?: number): string[] {
+  if (Array.isArray(token) && r != null) {
+    // Per-row array (each entry can be string or string[])
+    return toClassArray(token[r] as ClassList | undefined);
   }
-  return token as T;
+  return toClassArray(token as ClassList | undefined);
 }
 
-// Specialized pickers for 1D arrays
-const pickRow = <T>(arr: T | T[] | T[][] | undefined, r: number) => {
-  if (arr == null) return undefined;
-  if (Array.isArray(arr)) {
-    if (Array.isArray(arr[0])) return undefined;
-    const a = arr as T[];
-    return typeof a[r] !== "undefined" ? a[r] : undefined;
+function pickColClass(token?: ClassList | PerColClassList, c?: number): string[] {
+  if (Array.isArray(token) && c != null) {
+    return toClassArray(token[c] as ClassList | undefined);
   }
-  return arr as T;
-};
-const pickCol = <T>(arr: T | T[] | T[][] | undefined, c: number) => {
-  if (arr == null) return undefined;
-  if (Array.isArray(arr)) {
-    if (Array.isArray(arr[0])) return undefined;
-    const a = arr as T[];
-    return typeof a[c] !== "undefined" ? a[c] : undefined;
-  }
-  return arr as T;
-};
-
-function isClassToken(token?: string) {
-  if (!token) return false;
-  // crude test: utility classes usually have '-', spaces, or start with alpha and not '#'
-  return token.includes(" ") || token.includes("-") || (!token.startsWith("#") && !token.startsWith("rgb") && !token.startsWith("hsl"));
+  return toClassArray(token as ClassList | undefined);
 }
 
-function colorClassOrStyle(kind: "bg" | "text" | "border", token?: string) {
-  if (!token) return { class: "", style: {} as Record<string, string> };
-  if (isClassToken(token)) {
-    if (kind === "bg") return { class: token, style: {} };
-    if (kind === "text") return { class: token, style: {} };
-    if (kind === "border") return { class: token, style: {} };
-  }
-  // treat as CSS value
-  if (kind === "bg") return { class: "", style: { backgroundColor: token } };
-  if (kind === "text") return { class: "", style: { color: token } };
-  if (kind === "border") return { class: "", style: { borderColor: token } };
-  return { class: "", style: {} };
+function rowClassOf(r: number): string[] {
+  return pickRowClass(cfg.value.rowClass, r);
 }
 
-// ---- borders ---------------------------------------------------------------
-const borders = computed(() => ({
-  inner: cfg.value.borders?.inner ?? true,
-  outer: cfg.value.borders?.outer ?? true,
-  width: cfg.value.borders?.width ?? 1,
-  style: cfg.value.borders?.style ?? "solid",
-  color: cfg.value.borders?.color ?? "#e5e7eb",
-}));
-
-const borderColorToken = computed(() => borders.value.color);
-const borderColorClass = computed(() => {
-  const cc = colorClassOrStyle("border", borderColorToken.value);
-  return cc.class || "";
-});
-const borderColorInline = computed(() => {
-  const cc = colorClassOrStyle("border", borderColorToken.value);
-  return cc.style;
-});
-
-const tableStyle = computed(
-  () =>
-    ({
-      tableLayout: cfg.value.tableLayout ?? "auto",
-      width: cfg.value.tableWidth ? toPx(cfg.value.tableWidth) : undefined,
-      borderCollapse: "collapse",
-      // Apply outer border if enabled
-      borderStyle: borders.value.outer ? borders.value.style : "none",
-      borderWidth: borders.value.outer ? toPx(borders.value.width) : undefined,
-      ...(borderColorInline.value || {}),
-    } as Record<string, string | undefined>)
-);
-
-function rowStyle(r: number) {
-  const h = pickRow<Dim>(cfg.value.rowHeights, r);
-  return {
-    height: h != null ? toPx(h) : undefined,
-  };
-}
-function colStyle(c: number) {
-  const w = pickCol<Dim>(cfg.value.colWidths, c);
-  return {
-    width: w != null ? toPx(w) : undefined,
-  };
+function headerClassOf(c: number): string[] {
+  // header can be a single classlist or per-column
+  const base = pickColClass(cfg.value.headerClass, c);
+  return base;
 }
 
-function cellStyle(r: number, c: number) {
-  // bg: matrix > per-row > single
-  const mBg = pick<string>(cfg.value.bg as string[][] | undefined, r, c);
-  const rowBg = pickRow<string>(cfg.value.bg as string[] | undefined, r);
-  const colBg = pickCol<string>(cfg.value.bg as string[] | undefined, c); // optional alternate use
-  const bgTok = mBg ?? rowBg ?? colBg ?? (typeof cfg.value.bg === "string" ? cfg.value.bg : undefined);
-  const bg = colorClassOrStyle("bg", bgTok);
-
-  const mColor = pick<string>(cfg.value.color as string[][] | undefined, r, c);
-  const rowColor = pickRow<string>(cfg.value.color as string[] | undefined, r);
-  const colColor = pickCol<string>(cfg.value.color as string[] | undefined, c);
-  const colorTok = mColor ?? rowColor ?? colColor ?? (typeof cfg.value.color === "string" ? cfg.value.color : undefined);
-  const fg = colorClassOrStyle("text", colorTok);
-
-  const pad = cfg.value.cellPadding;
-  const padStyle = Array.isArray(pad) ? { padding: `${toPx(pad[0])} ${toPx(pad[1])}` } : pad != null ? { padding: toPx(pad) } : {};
-
-  const borderInline = borders.value.inner
-    ? {
-        borderStyle: borders.value.style,
-        borderWidth: toPx(borders.value.width),
-        ...(borderColorInline.value || {}),
-      }
-    : { border: "none" };
-
-  return {
-    ...bg.style,
-    ...fg.style,
-    ...padStyle,
-    ...borderInline,
-  };
-}
-
-function cellClass(r: number, c: number) {
-  // bg/fg classes if provided
-  const mBg = pick<string>(cfg.value.bg as string[][] | undefined, r, c);
-  const rowBg = pickRow<string>(cfg.value.bg as string[] | undefined, r);
-  const colBg = pickCol<string>(cfg.value.bg as string[] | undefined, c);
-  const bgTok = mBg ?? rowBg ?? colBg ?? (typeof cfg.value.bg === "string" ? cfg.value.bg : undefined);
-  const bg = colorClassOrStyle("bg", bgTok);
-
-  const mColor = pick<string>(cfg.value.color as string[][] | undefined, r, c);
-  const rowColor = pickRow<string>(cfg.value.color as string[] | undefined, r);
-  const colColor = pickCol<string>(cfg.value.color as string[] | undefined, c);
-  const colorTok = mColor ?? rowColor ?? colColor ?? (typeof cfg.value.color === "string" ? cfg.value.color : undefined);
-  const fg = colorClassOrStyle("text", colorTok);
-
-  // text align: single | per-column | matrix
-  let alignTok: Align | undefined;
-  if (Array.isArray(cfg.value.textAlign)) {
-    if (Array.isArray(cfg.value.textAlign[0])) {
-      alignTok = (cfg.value.textAlign as Align[][])[r]?.[c];
-    } else {
-      alignTok = (cfg.value.textAlign as Align[])[c]; // default: per-column
-    }
-  } else if (typeof cfg.value.textAlign === "string") {
-    alignTok = cfg.value.textAlign as Align;
-  }
-
-  const alignClass = alignTok === "center" ? "rt-center" : alignTok === "right" ? "rt-right" : "rt-left";
-
-  const borderClass = borders.value.inner && borderColorClass.value ? borderColorClass.value : "";
-
-  return ["rt-cell", alignClass, bg.class, fg.class, borderClass].filter(Boolean);
+function cellClassOf(r: number, c: number): string[] {
+  const perCol = pickColClass(cfg.value.colClass, c);
+  const perCell = Array.isArray(cfg.value.cellClass)
+    ? toClassArray(cfg.value.cellClass?.[r]?.[c] as ClassList | undefined)
+    : toClassArray(cfg.value.cellClass as ClassList | undefined);
+  return ["rt-cell", ...perCol, ...perCell];
 }
 </script>
 
 <style scoped>
+/* minimal baseline; customize via classes passed in config */
 .rt {
-  width: max-content;
-  background: white;
+  border-collapse: separate;
+  border-spacing: 0;
 }
-.rt-wrap {
-  overflow: auto;
-}
-/* default cell visuals */
 .rt-cell {
-  min-width: 6ch;
-  line-height: 1.35;
+  vertical-align: middle;
 }
-/* text alignment helpers */
-.rt-left {
-  text-align: left;
-}
-.rt-center {
-  text-align: center;
-}
-.rt-right {
-  text-align: right;
-}
-
-/* Optional: feel free to remove if you don’t use class-based borders */
 </style>

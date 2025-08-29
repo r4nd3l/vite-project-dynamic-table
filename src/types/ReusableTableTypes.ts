@@ -1,41 +1,38 @@
-export type Dim = number | string;
-export type Align = "left" | "center" | "right";
-
 /**
- * A very simple, prop-driven config.
- * All style-like fields accept:
- *  - a single value  -> apply everywhere
- *  - a 1D array      -> per-row for rowHeights/bg/color, per-column for colWidths/textAlign
- *  - a 2D matrix     -> per-cell
- * Colors may be hex/rgb/hsl (inline) or a utility class (e.g. 'bg-sky-50', 'text-red-600').
+ * CLASS-ONLY CONFIG (no inline styles)
+ *
+ * - Provide `rows` & `cols` OR a `data` matrix (data takes precedence)
+ * - `defaultContent`: string or (r,c) => string, used when data is absent for a cell
+ * - `headers`: optional array of column titles (used when showHeader = true)
+ *
+ * All styling is via **classes only**:
+ * - wrapperClass: classes on outer <div>
+ * - tableClass:   classes on <table>
+ * - headerClass:  string for all headers OR array per-column (each entry may be a string or array)
+ * - rowClass:     string for all rows OR array per-row
+ * - colClass:     string for all columns OR array per-column (applied to each cell in that column)
+ * - cellClass:    string for all cells OR 2D matrix [row][col]
+ *
+ * You can pass space-delimited strings ("p-2 border") or arrays (["p-2","border"])
  */
 export interface TableConfig {
   rows?: number;
   cols?: number;
-  data?: (string | number | null)[][]; // explicit grid (overrides rows/cols)
+  data?: (string | number | null)[][];
   defaultContent?: string | ((row: number, col: number) => string);
 
-  // sizing
-  rowHeights?: Dim | Dim[]; // numbers => px
-  colWidths?: Dim | Dim[];
-  cellPadding?: Dim | [Dim, Dim]; // y or [y,x]
-  tableLayout?: "auto" | "fixed"; // default 'auto'
-  tableWidth?: Dim; // e.g. '100%', '800px'
+  showHeader?: boolean;
+  headers?: (string | null | undefined)[];
 
-  // colors/align
-  bg?: string | string[] | string[][];
-  color?: string | string[] | string[][];
-  textAlign?: Align | Align[] | Align[][];
-
-  // borders
-  borders?: {
-    inner?: boolean; // default: true
-    outer?: boolean; // default: true
-    width?: Dim; // default: 1
-    style?: "solid" | "dashed" | "dotted" | "double";
-    color?: string; // hex/rgb OR a class like 'border-gray-300'
-  };
-
-  // misc
-  className?: string; // extra table classes
+  // class-only styling
+  wrapperClass?: ClassList;
+  tableClass?: ClassList;
+  headerClass?: ClassList | PerColClassList;
+  rowClass?: ClassList | PerRowClassList;
+  colClass?: ClassList | PerColClassList;
+  cellClass?: ClassList | (ClassList | undefined)[][];
 }
+
+export type ClassList = string | string[];
+export type PerRowClassList = (ClassList | undefined)[];
+export type PerColClassList = (ClassList | undefined)[];

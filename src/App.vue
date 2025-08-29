@@ -1,20 +1,20 @@
 <template>
-  <main style="padding: 2rem; display: grid; gap: 2rem; max-width: 1200px; margin: 0 auto">
-    <h1>ReusableTable demo</h1>
+  <main class="p-8 space-y-10 max-w-screen-lg mx-auto">
+    <h1 class="text-2xl font-semibold">ReusableTable — class-only</h1>
 
     <section>
-      <h2>Basic (auto content)</h2>
-      <ReusableTable :config="basic" />
+      <h2 class="text-lg font-medium mb-2">A) Auto-numbered content</h2>
+      <ReusableTable :config="autoNumbered" />
     </section>
 
     <section>
-      <h2>Custom colors, sizes, borders</h2>
-      <ReusableTable :config="styled" />
+      <h2 class="text-lg font-medium mb-2">B) Zebra rows + borders (class-only)</h2>
+      <ReusableTable :config="zebra" />
     </section>
 
     <section>
-      <h2>Explicit data grid (names)</h2>
-      <ReusableTable :config="withNames" />
+      <h2 class="text-lg font-medium mb-2">C) Explicit data + per-column alignment</h2>
+      <ReusableTable :config="explicit" />
     </section>
   </main>
 </template>
@@ -23,54 +23,62 @@
 import ReusableTable from "./components/ReusableTable.vue";
 import type { TableConfig } from "./types/ReusableTableTypes";
 
-const basic: TableConfig = {
+/** A) no data -> rows/cols + default numbering */
+const autoNumbered: TableConfig = {
   rows: 3,
   cols: 4,
-  defaultContent: (r, c) => `R${r + 1}C${c + 1}`,
+  showHeader: true,
+  headers: ["A", "B", "C", "D"],
+  // only classes:
+  wrapperClass: "overflow-auto",
+  tableClass: "min-w-max border border-gray-300 rounded-md",
+  headerClass: ["bg-gray-100 text-gray-700 font-medium", "bg-gray-100", "bg-gray-100", "bg-gray-100"],
+  rowClass: [
+    "odd:bg-white even:bg-gray-50", // row 0
+    "odd:bg-white even:bg-gray-50", // row 1
+    "odd:bg-white even:bg-gray-50", // row 2
+  ],
+  colClass: [
+    "text-left p-2 border border-gray-200",
+    "text-center p-2 border border-gray-200",
+    "text-right p-2 border border-gray-200",
+    "text-left p-2 border border-gray-200",
+  ],
 };
 
-const styled: TableConfig = {
-  rows: 4,
-  cols: 4,
+/** B) only classes for visuals; zebra via rowClass; borders via colClass */
+const zebra: TableConfig = {
+  rows: 5,
+  cols: 3,
   defaultContent: (r, c) => `#${r + 1}-${c + 1}`,
-  // sizes
-  rowHeights: [100, 150, 50, 75], // px numbers or '2rem' as 1st, 2nd and so on
-  colWidths: ["8rem", "10rem", "12rem", "8rem"],
-  cellPadding: [8, 12], // [y, x] in px or CSS length
-  // colors (hex/rgb = inline, or utility classes like 'bg-blue-50', 'text-red-600')
-  bg: ["#f9fafb", "#ffffff", "#f9fafb", "#ffffff"], // per-row
-  color: "text-gray-800", // class applied to every cell
-  textAlign: ["left", "center", "right"], // per-column
-  // borders
-  borders: {
-    inner: true,
-    outer: true,
-    width: 4,
-    style: "solid",
-    color: "#e5e7eb", // or a class, e.g. 'border-gray-300'
-  },
-  tableLayout: "fixed", // optional: 'auto' | 'fixed'
-  className: "rounded-md overflow-hidden shadow-sm", // extra table classes
+  tableClass: "min-w-max rounded-md",
+  rowClass: ["bg-white", "bg-gray-50", "bg-white", "bg-gray-50", "bg-white"],
+  colClass: "p-2 border border-gray-200",
 };
 
-const withNames: TableConfig = {
-  // If you pass data, rows/cols are inferred
+/** C) explicit data; per-column alignment via colClass array; custom header */
+const explicit: TableConfig = {
   data: [
     ["Alice", "Engineering", "Lead"],
     ["Béla", "Design", "IC"],
     ["Cecilia", "Finance", "Mgr"],
-    ["Dávid", "Engineering", "IC"],
   ],
-  // Column sizes
-  colWidths: ["14ch", "18ch", "10ch"],
-  // Per-cell background (matrix) mixing class + hex
-  bg: [
-    ["bg-emerald-50", "#fff", "#fff"],
-    ["#fff", "#fff", "#fff"],
-    ["bg-emerald-50", "#fff", "#fff"],
-    ["#fff", "#fff", "#fff"],
+  showHeader: true,
+  headers: ["Name", "Team", "Role"],
+  tableClass: "border border-gray-300 rounded-md",
+  colClass: ["p-2 border border-gray-200 text-left", "p-2 border border-gray-200 text-center", "p-2 border border-gray-200 text-right"],
+  // per-cell overrides (matrix): emphasize first row, first col
+  cellClass: [
+    ["font-semibold", undefined, undefined],
+    [undefined, undefined, undefined],
+    [undefined, undefined, undefined],
   ],
-  borders: { inner: true, outer: true, width: 1, style: "dashed", color: "border-gray-400" },
-  textAlign: "left",
 };
 </script>
+
+<style>
+/* If you’re not using Tailwind, add your own CSS for the class names above, or swap to your design system classes. */
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+</style>
