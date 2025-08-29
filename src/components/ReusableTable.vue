@@ -27,81 +27,79 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ClassList, PerColClassList, PerRowClassList, TableConfig } from "../types/ReusableTableTypes";
-// (types are already declared above, no need to import)
 
 const props = defineProps<{ config: TableConfig }>();
 const cfg = computed(() => props.config ?? ({} as TableConfig));
 
-// --- grid shape -------------------------------------------------------------
+// grid conf
 const rowCount = computed(() => cfg.value.data?.length ?? cfg.value.rows ?? 0);
 const colCount = computed(() => cfg.value.data?.[0]?.length ?? cfg.value.cols ?? 0);
 
-function headerLabel(c: number) {
+const headerLabel = (c: number) => {
   const h = cfg.value.headers;
   if (h && typeof h[c] !== "undefined" && h[c] !== null) return String(h[c]);
   return `Col ${c + 1}`;
-}
+};
 
-function defaultContent(r: number, c: number) {
+const defaultContent = (r: number, c: number) => {
   const dc = cfg.value.defaultContent;
   if (typeof dc === "function") return dc(r, c);
   if (typeof dc === "string") return dc;
   return `R${r + 1}C${c + 1}`;
-}
+};
 
-function cellValue(r: number, c: number) {
+const cellValue = (r: number, c: number) => {
   const d = cfg.value.data;
   if (d && d[r] && typeof d[r][c] !== "undefined" && d[r][c] !== null) return d[r][c];
   return defaultContent(r, c);
-}
+};
 
-// --- class helpers ----------------------------------------------------------
-function toClassArray(token?: ClassList): string[] {
+// class helpers
+const toClassArray = (token?: ClassList): string[] => {
   if (!token) return [];
   if (Array.isArray(token)) return token.flatMap((v) => String(v).split(/\s+/).filter(Boolean));
   return String(token).split(/\s+/).filter(Boolean);
-}
+};
 
-function classList(token?: ClassList): string[] {
+const classList = (token?: ClassList): string[] => {
   return toClassArray(token);
-}
+};
 
-function pickRowClass(token?: ClassList | PerRowClassList, r?: number): string[] {
+const pickRowClass = (token?: ClassList | PerRowClassList, r?: number): string[] => {
   if (Array.isArray(token) && r != null) {
     // Per-row array (each entry can be string or string[])
     return toClassArray(token[r] as ClassList | undefined);
   }
   return toClassArray(token as ClassList | undefined);
-}
+};
 
-function pickColClass(token?: ClassList | PerColClassList, c?: number): string[] {
+const pickColClass = (token?: ClassList | PerColClassList, c?: number): string[] => {
   if (Array.isArray(token) && c != null) {
     return toClassArray(token[c] as ClassList | undefined);
   }
   return toClassArray(token as ClassList | undefined);
-}
+};
 
-function rowClassOf(r: number): string[] {
+const rowClassOf = (r: number): string[] => {
   return pickRowClass(cfg.value.rowClass, r);
-}
+};
 
-function headerClassOf(c: number): string[] {
+const headerClassOf = (c: number): string[] => {
   // header can be a single classlist or per-column
   const base = pickColClass(cfg.value.headerClass, c);
   return base;
-}
+};
 
-function cellClassOf(r: number, c: number): string[] {
+const cellClassOf = (r: number, c: number): string[] => {
   const perCol = pickColClass(cfg.value.colClass, c);
   const perCell = Array.isArray(cfg.value.cellClass)
     ? toClassArray(cfg.value.cellClass?.[r]?.[c] as ClassList | undefined)
     : toClassArray(cfg.value.cellClass as ClassList | undefined);
   return ["rt-cell", ...perCol, ...perCell];
-}
+};
 </script>
 
-<style scoped>
-/* minimal baseline; customize via classes passed in config */
+<style scoped lang="css">
 .rt {
   border-collapse: separate;
   border-spacing: 0;
