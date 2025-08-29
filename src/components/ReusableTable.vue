@@ -12,29 +12,44 @@
       </thead>
 
       <tbody>
-        <tr v-for="r in rowCount" :key="r" :class="classHelpers.rowClassOf(r - 1)">
-          <td v-for="c in colCount" :key="c" :class="classHelpers.cellClassOf(r - 1, c - 1)">
-            <!-- render component(s) if provided; else fall back to slot/default text -->
-            <template v-if="atomsForCell(r - 1, c - 1).length">
-              <component
-                v-for="(atom, i) in atomsForCell(r - 1, c - 1)"
-                :key="i"
-                :is="atomHelpers.tag(atom)"
-                v-bind="atomHelpers.props(atom, r - 1, c - 1)"
-                :class="classHelpers.classList(atomHelpers.class(atom))"
-              >
-                <template v-if="atomHelpers.text(atom, r - 1, c - 1) !== null">
-                  {{ atomHelpers.text(atom, r - 1, c - 1) }}
-                </template>
-              </component>
-            </template>
-            <template v-else>
-              <slot name="cell" :row="r - 1" :col="c - 1" :value="cellValue(r - 1, c - 1)">
-                {{ cellValue(r - 1, c - 1) }}
-              </slot>
-            </template>
-          </td>
-        </tr>
+        <!-- Loop rows; decide per-row whether to use a custom row component -->
+        <template v-for="r in rowCount" :key="r">
+          <!-- CUSTOM ROW COMPONENT -->
+          <component
+            v-if="rowHelpers.compOf(r - 1)"
+            :is="rowHelpers.compOf(r - 1)"
+            :row="r - 1"
+            :cols="colCount"
+            :row-class="rowHelpers.componentClassOf(r - 1)"
+            :value-at="(c:number) => cellValue(r - 1, c)"
+            :atoms-at="(c:number) => atomsForCell(r - 1, c)"
+            :cell-class-of="(c:number) => classHelpers.cellClassOf(r - 1, c)"
+            v-bind="rowHelpers.compPropsOf(r - 1)"
+          />
+          <!-- DEFAULT ROW (cells rendered here) -->
+          <tr v-else :class="classHelpers.rowClassOf(r - 1)">
+            <td v-for="c in colCount" :key="c" :class="classHelpers.cellClassOf(r - 1, c - 1)">
+              <template v-if="atomsForCell(r - 1, c - 1).length">
+                <component
+                  v-for="(atom, i) in atomsForCell(r - 1, c - 1)"
+                  :key="i"
+                  :is="atomHelpers.tag(atom)"
+                  v-bind="atomHelpers.props(atom, r - 1, c - 1)"
+                  :class="classHelpers.classList(atomHelpers.class(atom))"
+                >
+                  <template v-if="atomHelpers.text(atom, r - 1, c - 1) !== null">
+                    {{ atomHelpers.text(atom, r - 1, c - 1) }}
+                  </template>
+                </component>
+              </template>
+              <template v-else>
+                <slot name="cell" :row="r - 1" :col="c - 1" :value="cellValue(r - 1, c - 1)">
+                  {{ cellValue(r - 1, c - 1) }}
+                </slot>
+              </template>
+            </td>
+          </tr>
+        </template>
       </tbody>
     </table>
   </div>
@@ -160,6 +175,29 @@ const atomHelpers = {
     if (a.text == null) return null;
     const ctx: CellCtx = { row: r, col: c, value: cellValue(r, c) };
     return typeof a.text === "function" ? a.text(ctx) : String(a.text);
+  },
+};
+
+// row component selection
+const rowHelpers = {
+  compOf(r: number) {
+    const src = cfg.value.rowComponent;
+    if (!src) return null;
+    // Only call if it's specifically a c a component constructor)
+    if (typeof src === "function" && src.length === 1) {
+      return (src as (row: number) => any)(r);
+    }
+    return src;
+  },
+  compPropsOf(r: number) {
+    const p = cfg.value.rowComponentProps;
+    return typeof p === "function" ? p(r) : p ?? {};
+  },
+  componentClassOf(r: number): string[] {
+    // merge optional rowComponentClass with existing rowClass (so your zebra/borders persist)
+    const fromRowComp = classHelpers.pickRowClass(cfg.value.rowComponentClass, r);
+    const base = classHelpers.rowClassOf(r);
+    return [...base, ...fromRowComp];
   },
 };
 </script>

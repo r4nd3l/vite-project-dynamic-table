@@ -34,13 +34,24 @@ export interface TableConfig {
   cellClass?: ClassList | (ClassList | undefined)[][];
 
   /**
-   * NEW: component(s) to render inside cells.
-   * - Single token -> render in every cell
-   * - 1D array     -> per-column components
-   * - 2D matrix    -> per-cell components
-   * Each entry can be a single component def, an array of them, or undefined.
+   * Components inside cells:
+   * - Single token -> every cell
+   * - 1D array     -> per-column
+   * - 2D matrix    -> per-cell
    */
   cellContent?: CellContent;
+
+  /**
+   * row-level renderer.
+   * If provided (and resolves to a component for a given row), that component must render a <tr>…</tr>.
+   * - Component            -> used for ALL rows
+   * - (row)=>Component|null -> choose per row
+   */
+  rowComponent?: Component | ((row: number) => Component | null);
+  /** Optional props for the row component (static or by row) */
+  rowComponentProps?: Record<string, unknown> | ((row: number) => Record<string, unknown>);
+  /** Extra classes for the <tr> root when using row component (single or per-row) */
+  rowComponentClass?: ClassList | PerRowClassList;
 }
 
 export type ClassList = string | string[];
@@ -59,13 +70,9 @@ export type CellAtom =
   | string
   | number
   | {
-      /** Vue component (or a native tag like 'button', 'a', 'span') */
       is: Component | string;
-      /** Props object or a function that receives {row,col,value} and returns props */
       props?: Record<string, unknown> | ((ctx: CellCtx) => Record<string, unknown>);
-      /** Optional classes on the component root */
       class?: ClassList;
-      /** Optional text content (or function to generate it) for simple components */
       text?: string | ((ctx: CellCtx) => string);
     };
 
