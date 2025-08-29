@@ -19,12 +19,12 @@
               <component
                 v-for="(atom, i) in atomsForCell(r - 1, c - 1)"
                 :key="i"
-                :is="atomTag(atom)"
-                v-bind="atomProps(atom, r - 1, c - 1)"
-                :class="classHelpers.classList(atomClass(atom))"
+                :is="atomHelpers.tag(atom)"
+                v-bind="atomHelpers.props(atom, r - 1, c - 1)"
+                :class="classHelpers.classList(atomHelpers.class(atom))"
               >
-                <template v-if="atomText(atom, r - 1, c - 1) !== null">
-                  {{ atomText(atom, r - 1, c - 1) }}
+                <template v-if="atomHelpers.text(atom, r - 1, c - 1) !== null">
+                  {{ atomHelpers.text(atom, r - 1, c - 1) }}
                 </template>
               </component>
             </template>
@@ -137,31 +137,30 @@ const atomsForCell = (r: number, c: number): CellAtom[] => {
   return normalizeAtoms(content as CellAtom | CellAtom[], ctx);
 };
 
-const atomTag = (atom: CellAtom): any => {
-  if (atom == null || typeof atom === "string" || typeof atom === "number") return "span";
-  return (atom as any).is ?? "span";
-};
-
-const atomProps = (atom: CellAtom, r: number, c: number): Record<string, unknown> => {
-  if (atom == null || typeof atom === "string" || typeof atom === "number") return {};
-  const a = atom as any;
-  const ctx: CellCtx = { row: r, col: c, value: cellValue(r, c) };
-  if (typeof a.props === "function") return a.props(ctx) ?? {};
-  return a.props ?? {};
-};
-
-const atomClass = (atom: CellAtom): ClassList | undefined => {
-  if (atom == null || typeof atom === "string" || typeof atom === "number") return undefined;
-  return (atom as any).class;
-};
-
-const atomText = (atom: CellAtom, r: number, c: number): string | null => {
-  if (atom == null) return null;
-  if (typeof atom === "string" || typeof atom === "number") return String(atom);
-  const a = atom as any;
-  if (a.text == null) return null;
-  const ctx: CellCtx = { row: r, col: c, value: cellValue(r, c) };
-  return typeof a.text === "function" ? a.text(ctx) : String(a.text);
+const atomHelpers = {
+  tag(atom: CellAtom): any {
+    if (atom == null || typeof atom === "string" || typeof atom === "number") return "span";
+    return (atom as any).is ?? "span";
+  },
+  props(atom: CellAtom, r: number, c: number): Record<string, unknown> {
+    if (atom == null || typeof atom === "string" || typeof atom === "number") return {};
+    const a = atom as any;
+    const ctx: CellCtx = { row: r, col: c, value: cellValue(r, c) };
+    if (typeof a.props === "function") return a.props(ctx) ?? {};
+    return a.props ?? {};
+  },
+  class(atom: CellAtom): ClassList | undefined {
+    if (atom == null || typeof atom === "string" || typeof atom === "number") return undefined;
+    return (atom as any).class;
+  },
+  text(atom: CellAtom, r: number, c: number): string | null {
+    if (atom == null) return null;
+    if (typeof atom === "string" || typeof atom === "number") return String(atom);
+    const a = atom as any;
+    if (a.text == null) return null;
+    const ctx: CellCtx = { row: r, col: c, value: cellValue(r, c) };
+    return typeof a.text === "function" ? a.text(ctx) : String(a.text);
+  },
 };
 </script>
 
