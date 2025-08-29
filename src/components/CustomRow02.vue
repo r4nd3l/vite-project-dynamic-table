@@ -1,5 +1,5 @@
 <template>
-  <tr :class="rowClass">
+  <tr :class="rowClass" class="bg-blue-300">
     <td :class="cellClassOf(0)">{{ person.name }}</td>
     <td :class="cellClassOf(1)">{{ person.age }}</td>
     <td :class="cellClassOf(2)">{{ person.city }}</td>

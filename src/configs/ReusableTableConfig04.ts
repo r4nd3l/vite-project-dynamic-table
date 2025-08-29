@@ -11,8 +11,11 @@ export const ReusableTableConfiguration04: TableConfig = {
   data: people.map((p) => [p.name, p.age, p.city]),
   showHeader: true,
   headers: ["Name", "Age", "City"],
+  wrapperClass: ["border border-gray-300 p-4 bg-white shadow-md rounded-md"],
   tableClass: "border border-gray-600 rounded-md",
-  colClass: ["p-2 border border-gray-200 text-left", "p-2 border border-gray-200 text-center", "p-2 border border-gray-200 text-right"],
+  headerClass: ["bg-gray-300", "bg-gray-400", "bg-gray-500"],
+  // rowClass: ["bg-green-300", "bg-green-400", "bg-green-300"],
+  colClass: ["p-4 font-bold text-red-500", "p-4 font-bold text-blue-500", "p-4 font-bold text-purple-500"],
 
   rowComponent: CustomRow02,
   rowComponentProps: (row) => ({ person: people[row] }),
