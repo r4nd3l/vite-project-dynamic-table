@@ -1,9 +1,9 @@
 <template>
-  <div :class="classList(cfg.wrapperClass)">
-    <table :class="['rt', ...classList(cfg.tableClass)]">
+  <div :class="classHelpers.classList(cfg.wrapperClass)">
+    <table :class="['rt', ...classHelpers.classList(cfg.tableClass)]">
       <thead v-if="cfg.showHeader">
         <tr>
-          <th v-for="c in colCount" :key="c" :class="headerClassOf(c - 1)">
+          <th v-for="c in colCount" :key="c" :class="classHelpers.headerClassOf(c - 1)">
             <slot name="header" :col="c - 1" :label="headerLabel(c - 1)">
               {{ headerLabel(c - 1) }}
             </slot>
@@ -12,8 +12,8 @@
       </thead>
 
       <tbody>
-        <tr v-for="r in rowCount" :key="r" :class="rowClassOf(r - 1)">
-          <td v-for="c in colCount" :key="c" :class="cellClassOf(r - 1, c - 1)">
+        <tr v-for="r in rowCount" :key="r" :class="classHelpers.rowClassOf(r - 1)">
+          <td v-for="c in colCount" :key="c" :class="classHelpers.cellClassOf(r - 1, c - 1)">
             <slot name="cell" :row="r - 1" :col="c - 1" :value="cellValue(r - 1, c - 1)">
               {{ cellValue(r - 1, c - 1) }}
             </slot>
@@ -55,47 +55,40 @@ const cellValue = (r: number, c: number) => {
 };
 
 // class helpers
-const toClassArray = (token?: ClassList): string[] => {
-  if (!token) return [];
-  if (Array.isArray(token)) return token.flatMap((v) => String(v).split(/\s+/).filter(Boolean));
-  return String(token).split(/\s+/).filter(Boolean);
-};
-
-const classList = (token?: ClassList): string[] => {
-  return toClassArray(token);
-};
-
-const pickRowClass = (token?: ClassList | PerRowClassList, r?: number): string[] => {
-  if (Array.isArray(token) && r != null) {
-    // Per-row array (each entry can be string or string[])
-    return toClassArray(token[r] as ClassList | undefined);
-  }
-  return toClassArray(token as ClassList | undefined);
-};
-
-const pickColClass = (token?: ClassList | PerColClassList, c?: number): string[] => {
-  if (Array.isArray(token) && c != null) {
-    return toClassArray(token[c] as ClassList | undefined);
-  }
-  return toClassArray(token as ClassList | undefined);
-};
-
-const rowClassOf = (r: number): string[] => {
-  return pickRowClass(cfg.value.rowClass, r);
-};
-
-const headerClassOf = (c: number): string[] => {
-  // header can be a single classlist or per-column
-  const base = pickColClass(cfg.value.headerClass, c);
-  return base;
-};
-
-const cellClassOf = (r: number, c: number): string[] => {
-  const perCol = pickColClass(cfg.value.colClass, c);
-  const perCell = Array.isArray(cfg.value.cellClass)
-    ? toClassArray(cfg.value.cellClass?.[r]?.[c] as ClassList | undefined)
-    : toClassArray(cfg.value.cellClass as ClassList | undefined);
-  return ["rt-cell", ...perCol, ...perCell];
+const classHelpers = {
+  toClassArray(token?: ClassList): string[] {
+    if (!token) return [];
+    if (Array.isArray(token)) return token.flatMap((v) => String(v).split(/\s+/).filter(Boolean));
+    return String(token).split(/\s+/).filter(Boolean);
+  },
+  classList(token?: ClassList): string[] {
+    return classHelpers.toClassArray(token);
+  },
+  pickRowClass(token?: ClassList | PerRowClassList, r?: number): string[] {
+    if (Array.isArray(token) && r != null) {
+      return classHelpers.toClassArray(token[r] as ClassList | undefined);
+    }
+    return classHelpers.toClassArray(token as ClassList | undefined);
+  },
+  pickColClass(token?: ClassList | PerColClassList, c?: number): string[] {
+    if (Array.isArray(token) && c != null) {
+      return classHelpers.toClassArray(token[c] as ClassList | undefined);
+    }
+    return classHelpers.toClassArray(token as ClassList | undefined);
+  },
+  rowClassOf(r: number): string[] {
+    return classHelpers.pickRowClass(cfg.value.rowClass, r);
+  },
+  headerClassOf(c: number): string[] {
+    return classHelpers.pickColClass(cfg.value.headerClass, c);
+  },
+  cellClassOf(r: number, c: number): string[] {
+    const perCol = classHelpers.pickColClass(cfg.value.colClass, c);
+    const perCell = Array.isArray(cfg.value.cellClass)
+      ? classHelpers.toClassArray(cfg.value.cellClass?.[r]?.[c] as ClassList | undefined)
+      : classHelpers.toClassArray(cfg.value.cellClass as ClassList | undefined);
+    return ["rt-cell", ...perCol, ...perCell];
+  },
 };
 </script>
 
