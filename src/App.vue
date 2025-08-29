@@ -10,10 +10,11 @@
 <script setup lang="ts">
 import ReusableTable from "./components/ReusableTable.vue";
 import type { TableConfig } from "./types/ReusableTableTypes";
+import Pill from "./components/Pill.vue";
 
 const explicit: TableConfig = {
-  rows: 4,
-  cols: 4,
+  // rows: 3,
+  // cols: 3,
   data: [
     ["Alice", "Engineering", "Lead"],
     ["Béla", "Design", "IC"],
@@ -38,6 +39,32 @@ const explicit: TableConfig = {
     ["bg-red-500", undefined, undefined],
     [undefined, undefined, undefined],
     [undefined, undefined, undefined],
+  ],
+
+  // components per column
+  cellContent: [
+    // Column 0 -> Pill with the cell's text
+    {
+      is: Pill,
+      class: "mr-2",
+      props: ({ value }) => ({
+        text: String(value),
+        klass: "bg-indigo-600 text-white",
+      }),
+    },
+    // Column 1 -> nothing special (uses default text)
+    undefined,
+    // Column 2 -> a native button
+    {
+      is: "button",
+      class: "px-2 py-1 text-xs border rounded",
+      props: ({ row, value }) => ({
+        // You can pass DOM listeners right here
+        onClick: () => alert(`Row ${row + 1} role: ${value}`),
+        type: "button",
+      }),
+      text: "Edit",
+    },
   ],
 };
 </script>
