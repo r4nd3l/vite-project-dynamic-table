@@ -20,7 +20,8 @@
 </template>
 
 <script setup lang="ts">
-import ReusableTable, { type TableConfig } from "./components/ReusableTable.vue";
+import ReusableTable from "./components/ReusableTable.vue";
+import type { TableConfig } from "./types/ReusableTableTypes";
 
 const basic: TableConfig = {
   rows: 3,
