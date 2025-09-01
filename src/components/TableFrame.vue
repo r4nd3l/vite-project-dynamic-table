@@ -1,7 +1,7 @@
 <template>
   <div :class="klass(wrapperClass)">
     <table :class="klass(tableClass)">
-      <!-- THEAD (optional) -->
+      <!-- optional(!) - blank means empty -->
       <thead v-if="headers?.length" :class="klass(theadClass)">
         <tr :class="klass(headerRowClass)">
           <th v-for="(h, i) in headers" :key="i" :class="klass(thClass)">
@@ -11,7 +11,7 @@
       </thead>
 
       <tbody :class="klass(tbodyClass)">
-        <!-- Render every source, one after another -->
+        <!-- render every source -->
         <template v-for="(src, sIdx) in normalizedSources" :key="sIdx">
           <component
             v-for="(item, i) in src.items"
@@ -44,7 +44,7 @@ const props = withDefaults(defineProps<TableFrameProps>(), {
 
 const klass = (c?: ClassList) => (Array.isArray(c) ? c : c ? c.split(/\s+/) : []);
 
-// If user passed a single rows + rowComponent, normalize into a source:
+// single rows + rowComponent will normalize into a source
 const singleSource = computed<RowSource | null>(() => {
   if (props.rows && props.rowComponent) {
     return {
@@ -59,6 +59,7 @@ const normalizedSources = computed(() => {
   const base: RowSource[] = [];
   if (singleSource.value) base.push(singleSource.value);
   if (props.sources?.length) base.push(...props.sources);
+
   // annotate with running offsets and safe key
   let offset = 0;
   return base.map((src) => {
@@ -70,8 +71,6 @@ const normalizedSources = computed(() => {
   });
 });
 
-// HEADS UP: all row components in this frame should render the same number of <td>s
-// so they align with the header. We surface a colCount hint to rows.
 const colCount = computed(() => props.headers?.length ?? undefined);
 
 // helpers to compute row classes & props
