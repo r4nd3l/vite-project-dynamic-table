@@ -1,11 +1,15 @@
 <template>
   <div :class="klass(wrapperClass)">
     <table :class="klass(tableClass)">
-      <!-- optional(!) - blank means empty -->
       <thead v-if="headers?.length" :class="klass(theadClass)">
         <tr :class="klass(headerRowClass)">
           <th v-for="(h, i) in headers" :key="i" :class="klass(thClass)">
-            <slot name="th" :label="h" :index="i">{{ h }}</slot>
+            <!-- column-specific slot has priority, then a generic #th, then plain text -->
+            <slot :name="`th-${i}`" :label="h" :index="i">
+              <slot name="th" :label="h" :index="i">
+                {{ h }}
+              </slot>
+            </slot>
           </th>
         </tr>
       </thead>

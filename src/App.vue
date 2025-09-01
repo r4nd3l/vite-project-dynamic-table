@@ -2,19 +2,19 @@
   <main class="p-8 max-w-4xl mx-auto space-y-10">
     <h1 class="text-2xl font-semibold">TableFrame</h1>
 
+    <!-- TableFrame Component -->
     <component
       :is="TableFrame"
-      :headers="['Col_A', 'Col_B', 'Col_C']"
+      :headers="['First', 'Second', 'Third']"
       :sources="sources"
-      wrapperClass="overflow-auto"
       tableClass="min-w-max border border-gray-300 rounded-md"
       theadClass="bg-gray-400"
-      headerRowClass="border-b border-gray-200"
-      thClass="p-2 text-left text-gray-700 text-white"
+      thClass="p-2 text-left text-white"
       tbodyClass="divide-y divide-gray-100"
       baseRowClass="hover:bg-gray-50"
       tdClass="p-2"
     />
+    <!-- END -->
   </main>
 </template>
 
