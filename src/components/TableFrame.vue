@@ -23,6 +23,8 @@
             :cols="colCount"
             :row-class="rowClasses(src, item, i)"
             :td-class="klass(tdClass)"
+            :is-first-row="i === 0"
+            :is-last-row="i === src.items.length - 1"
             v-bind="propsFor(src, item, i)"
             v-on="$attrs"
           />

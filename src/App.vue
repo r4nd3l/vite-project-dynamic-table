@@ -34,7 +34,7 @@ const sources: RowSource[] = [
     rowComponent: UserRow,
     key: (u) => (u as any).id,
     rowClass: (_, i) => (i % 2 ? "bg-white" : "bg-gray-50"),
-    rowProps: () => ({ "data-kind": "user" }), // extra attrs/props
+    rowProps: () => ({ "data-kind": "user" }),
   },
 ];
 </script>
