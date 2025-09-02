@@ -14,7 +14,7 @@
       baseRowClass="hover:bg-gray-50"
       tdClass="p-2"
     />
-    <!-- END -->
+    <!-- -->
   </main>
 </template>
 
