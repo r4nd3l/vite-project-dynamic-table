@@ -2,7 +2,6 @@
   <main class="p-8 max-w-4xl mx-auto space-y-10">
     <h1 class="text-2xl font-semibold">TableFrame</h1>
 
-    <!-- TableFrame Component -->
     <component
       :is="TableFrame"
       :headers="['First', 'Second', 'Third']"
@@ -14,7 +13,6 @@
       baseRowClass="hover:bg-gray-50"
       tdClass="p-2"
     />
-    <!-- -->
   </main>
 </template>
 
