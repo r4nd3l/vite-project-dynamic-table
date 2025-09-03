@@ -14,64 +14,83 @@
         </tr>
       </thead>
 
+      <!-- TableFrame.vue -->
       <tbody :class="klass(tbodyClass)">
-        <!-- render every source -->
         <template v-for="(src, sIdx) in normalizedSources" :key="sIdx">
-          <component
-            v-for="(item, i) in src.items"
-            :key="String(src.key(item, i, src.offset + i))"
-            :is="src.rowComponent"
-            :row="src.offset + i"
-            :index="i"
-            :item="item"
-            :cols="colCount"
-            :row-class="rowClasses(src, item, i)"
-            :td-class="klass(tdClass)"
-            :is-first-row="i === 0"
-            :is-last-row="i === src.items.length - 1"
-            :row-attrs="propsFor(src, item, i)"
-            v-on="$attrs"
-          />
+          <template v-for="(item, i) in src.items" :key="String(src.key(item, i, src.offset + i))">
+            <!-- If a rowComponent is provided, use it -->
+            <component
+              v-if="src.rowComponent"
+              :is="src.rowComponent"
+              :row="src.offset + i"
+              :index="i"
+              :item="item"
+              :cols="colCount"
+              :row-class="rowClasses(src, item, i)"
+              :td-class="klass(tdClass)"
+              :is-first-row="i === 0"
+              :is-last-row="i === src.items.length - 1"
+              :row-attrs="propsFor(src, item, i)"
+            />
+            <!-- Otherwise, render via a scoped slot -->
+            <template v-else>
+              <slot
+                name="row"
+                :row="src.offset + i"
+                :index="i"
+                :item="item"
+                :cols="colCount"
+                :row-class="rowClasses(src, item, i)"
+                :td-class="klass(tdClass)"
+                :is-first-row="i === 0"
+                :is-last-row="i === src.items.length - 1"
+                :row-attrs="propsFor(src, item, i)"
+              >
+                <!-- Optional fallback if no slot is provided -->
+                <tr :class="rowClasses(src, item, i)">
+                  <td :class="klass(tdClass)">{{ (item as any)?.name }}</td>
+                  <td :class="klass(tdClass)">{{ (item as any)?.team }}</td>
+                  <td :class="[...klass(tdClass), 'text-left']">{{ (item as any)?.role }}</td>
+                </tr>
+              </slot>
+            </template>
+          </template>
         </template>
       </tbody>
     </table>
   </div>
 </template>
-
 <script setup lang="ts">
 import { computed } from "vue";
-import type { TableFrameProps, RowSource, ClassList } from "./../types/table-frame.types";
+import type { TableFrameProps, RowSource, ClassList, RowKeyFn } from "./../types/table-frame.types";
 
 defineOptions({ inheritAttrs: false });
 
-const props = withDefaults(defineProps<TableFrameProps>(), {
+// ⬇️ IMPORTANT: use <any> so props.sources is RowSource<any>[]
+const props = withDefaults(defineProps<TableFrameProps<any>>(), {
   sources: () => [],
 });
 
-const klass = (c?: ClassList) => (Array.isArray(c) ? c : c ? c.split(/\s+/) : []);
+const klass = (c?: ClassList): string[] => (Array.isArray(c) ? c : c ? c.split(/\s+/) : []);
 
-// single rows + rowComponent will normalize into a source
-const singleSource = computed<RowSource | null>(() => {
+// single-source normalization
+const singleSource = computed<RowSource<any> | null>(() => {
   if (props.rows && props.rowComponent) {
-    return {
-      items: props.rows,
-      rowComponent: props.rowComponent,
-    } as RowSource;
+    return { items: props.rows, rowComponent: props.rowComponent };
   }
   return null;
 });
 
 const normalizedSources = computed(() => {
-  const base: RowSource[] = [];
+  const base: RowSource<any>[] = [];
   if (singleSource.value) base.push(singleSource.value);
   if (props.sources?.length) base.push(...props.sources);
 
-  // annotate with running offsets and safe key
   let offset = 0;
   return base.map((src) => {
     const length = src.items?.length ?? 0;
-    const key = src.key ?? ((_: unknown, _i: number, gi: number) => gi);
-    const out = { ...src, offset, key } as RowSource & { offset: number; key: any };
+    const key: RowKeyFn = src.key ?? ((_, __, gi) => gi);
+    const out = { ...src, offset, key } as RowSource<any> & { offset: number; key: RowKeyFn };
     offset += length;
     return out;
   });
@@ -79,19 +98,13 @@ const normalizedSources = computed(() => {
 
 const colCount = computed(() => props.headers?.length ?? undefined);
 
-// helpers to compute row classes & props
-function rowClasses(src: RowSource & { offset: number }, item: unknown, i: number): string[] {
+function rowClasses(src: RowSource<any> & { offset: number }, item: unknown, i: number): string[] {
   const base = klass(props.baseRowClass);
-  let extra: ClassList = undefined;
-  if (typeof src.rowClass === "function") {
-    extra = (src.rowClass as any)(item, i, src.offset + i);
-  } else {
-    extra = src.rowClass;
-  }
+  const extra = typeof src.rowClass === "function" ? (src.rowClass as any)(item, i, src.offset + i) : src.rowClass;
   return [...base, ...klass(extra)];
 }
 
-function propsFor(src: RowSource & { offset: number }, item: unknown, i: number) {
+function propsFor(src: RowSource<any> & { offset: number }, item: unknown, i: number) {
   const rowIdx = src.offset + i;
   if (!src.rowProps) return {};
   return typeof src.rowProps === "function" ? (src.rowProps as any)(item, i, rowIdx) : src.rowProps;
