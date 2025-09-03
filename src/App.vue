@@ -31,7 +31,7 @@ const users = [
 const sources: RowSource[] = [
   {
     items: users,
-    rowComponent: UserRow,
+    rowComponent: UserRow, // <= component should be created on-the-fly
     key: (u) => (u as any).id,
     rowClass: (_, i) => (i % 2 ? "bg-white" : "bg-gray-50"),
     rowProps: () => ({ "data-kind": "user" }),
