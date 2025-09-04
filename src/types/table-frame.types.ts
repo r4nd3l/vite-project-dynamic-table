@@ -1,59 +1,63 @@
-import type { Component, FunctionalComponent } from 'vue'
+// src/types/table-frame.types.ts
+import type { Component, FunctionalComponent } from "vue";
 
-export type ClassList = string | string[] | undefined
+export type ClassList = string | string[] | undefined;
 
-/** Props a row renderer receives (still strongly typed for your own FCs/SFCs) */
 export interface RowProps<T = unknown> {
-  row: number            // global index
-  index: number          // index within source
-  item: T
-  cols?: number
-  rowClass: string[]
-  tdClass: string[]
-  isFirstRow: boolean
-  isLastRow: boolean
-  rowAttrs?: Record<string, unknown>
+  row: number;
+  index: number;
+  item: T;
+  cols?: number;
+  rowClass: string[];
+  tdClass: string[];
+  isFirstRow: boolean;
+  isLastRow: boolean;
+  rowAttrs?: Record<string, unknown>;
 }
 
-/** Callback shapes (use `any` to stay assignable across generics) */
-export type RowKeyFn = (item: any, index: number, globalIndex: number) => string | number
-export type RowPropsFn = (item: any, index: number, globalIndex: number) => Record<string, unknown>
-export type RowClassFn = (item: any, index: number, globalIndex: number) => ClassList
+// keep these "broad" to avoid generic invariance at prop boundary
+export type RowKeyFn = (item: any, index: number, globalIndex: number) => string | number;
+export type RowPropsFn = (item: any, index: number, globalIndex: number) => Record<string, unknown>;
+export type RowClassFn = (item: any, index: number, globalIndex: number) => ClassList;
 
-/** A logical group of rows to render */
+// NEW: structured header entry
+export type HeaderLike =
+  | string
+  | {
+      label: string;
+      class?: ClassList;
+      attrs?: Record<string, unknown>;
+    };
+
 export interface RowSource<T = any> {
-  items: T[]
-  /**
-   * Optional row renderer. If omitted, TableFrame expects the consumer
-   * to provide a `#row` scoped slot.
-   *
-   * NOTE: we keep this broad to avoid invariance issues at the prop boundary.
-   * You can still build strongly typed row components using RowProps<T> in your own code.
-   */
-  rowComponent?: Component | FunctionalComponent<any>
-  key?: RowKeyFn
-  rowProps?: Record<string, unknown> | RowPropsFn
-  rowClass?: ClassList | RowClassFn
+  items: T[];
+  rowComponent?: Component | FunctionalComponent<any>;
+  key?: RowKeyFn;
+  rowProps?: Record<string, unknown> | RowPropsFn;
+  rowClass?: ClassList | RowClassFn;
 }
 
-/** Props for TableFrame */
 export interface TableFrameProps<T = any> {
-  headers?: string[]
+  // headers can be strings or structured objects
+  headers?: HeaderLike[];
 
-  /** Either use `sources`, or `rows` + `rowComponent` (TableFrame will normalize). */
-  sources?: RowSource<T>[]
-  rows?: T[]
-  rowComponent?: Component | FunctionalComponent<any>
+  // either sources, or rows+rowComponent
+  sources?: RowSource<T>[];
+  rows?: T[];
+  rowComponent?: Component | FunctionalComponent<any>;
 
-  wrapperClass?: ClassList
-  tableClass?: ClassList
-  theadClass?: ClassList
-  headerRowClass?: ClassList
-  thClass?: ClassList
-  tbodyClass?: ClassList
-  baseRowClass?: ClassList
-  tdClass?: ClassList
+  wrapperClass?: ClassList;
+  tableClass?: ClassList;
+  theadClass?: ClassList;
+  headerRowClass?: ClassList;
+  thClass?: ClassList;
+  tbodyClass?: ClassList;
+  baseRowClass?: ClassList;
+  tdClass?: ClassList;
 
-  /** Optional extra groups to render as a footer/tfoot if you add it later */
-  footerSources?: RowSource<T>[]
+  // NEW: additional ways to style <th> per column
+  thClasses?: ClassList[] | ((label: string, index: number) => ClassList);
+  thAttrs?: Record<string, unknown> | ((label: string, index: number) => Record<string, unknown>);
+
+  footerSources?: RowSource<T>[];
 }

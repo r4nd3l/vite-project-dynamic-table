@@ -1,24 +1,22 @@
 <template>
   <div :class="klass(wrapperClass)">
     <table :class="klass(tableClass)">
-      <thead v-if="headers?.length" :class="klass(theadClass)">
+      <thead v-if="normalizedHeaders.length" :class="klass(theadClass)">
         <tr :class="klass(headerRowClass)">
-          <th v-for="(h, i) in headers" :key="i" :class="klass(thClass)">
-            <!-- column-specific slot has priority, then a generic #th, then plain text -->
-            <slot :name="`th-${i}`" :label="h" :index="i">
-              <slot name="th" :label="h" :index="i">
-                {{ h }}
+          <th v-for="(h, i) in normalizedHeaders" :key="i" :class="thClassFor(i, h.label, h.classList)" v-bind="thAttrsFor(i, h.label, h.attrs)">
+            <!-- column-specific slot has priority, then a generic #th, then label -->
+            <slot :name="`th-${i}`" :label="h.label" :index="i">
+              <slot name="th" :label="h.label" :index="i">
+                {{ h.label }}
               </slot>
             </slot>
           </th>
         </tr>
       </thead>
 
-      <!-- TableFrame.vue -->
       <tbody :class="klass(tbodyClass)">
         <template v-for="(src, sIdx) in normalizedSources" :key="sIdx">
           <template v-for="(item, i) in src.items" :key="String(src.key(item, i, src.offset + i))">
-            <!-- If a rowComponent is provided, use it -->
             <component
               v-if="src.rowComponent"
               :is="src.rowComponent"
@@ -32,7 +30,6 @@
               :is-last-row="i === src.items.length - 1"
               :row-attrs="propsFor(src, item, i)"
             />
-            <!-- Otherwise, render via a scoped slot -->
             <template v-else>
               <slot
                 name="row"
@@ -45,14 +42,7 @@
                 :is-first-row="i === 0"
                 :is-last-row="i === src.items.length - 1"
                 :row-attrs="propsFor(src, item, i)"
-              >
-                <!-- Optional fallback if no slot is provided -->
-                <tr :class="rowClasses(src, item, i)">
-                  <td :class="klass(tdClass)">{{ (item as any)?.name }}</td>
-                  <td :class="klass(tdClass)">{{ (item as any)?.team }}</td>
-                  <td :class="[...klass(tdClass), 'text-left']">{{ (item as any)?.role }}</td>
-                </tr>
-              </slot>
+              />
             </template>
           </template>
         </template>
@@ -60,20 +50,55 @@
     </table>
   </div>
 </template>
+
 <script setup lang="ts">
 import { computed } from "vue";
-import type { TableFrameProps, RowSource, ClassList, RowKeyFn } from "./../types/table-frame.types";
+import type { TableFrameProps, RowSource, ClassList, RowKeyFn, HeaderLike } from "./../types/table-frame.types";
 
 defineOptions({ inheritAttrs: false });
 
-// ⬇️ IMPORTANT: use <any> so props.sources is RowSource<any>[]
+// Important: keep <any> to avoid generic invariance at prop boundary
 const props = withDefaults(defineProps<TableFrameProps<any>>(), {
   sources: () => [],
 });
 
 const klass = (c?: ClassList): string[] => (Array.isArray(c) ? c : c ? c.split(/\s+/) : []);
 
-// single-source normalization
+/** Normalize headers to objects with label/classList/attrs */
+const normalizedHeaders = computed(() =>
+  (props.headers ?? []).map((h: HeaderLike) => {
+    if (typeof h === "string") {
+      return { label: h, classList: [] as string[], attrs: {} as Record<string, unknown> };
+    }
+    return {
+      label: h.label,
+      classList: klass(h.class),
+      attrs: h.attrs ?? {},
+    };
+  })
+);
+
+/** Optional extra classes per <th>, via prop thClasses */
+function thClassFor(index: number, label: string, fromHeader: string[]): string[] {
+  const base = klass(props.thClass);
+  const extra = Array.isArray(props.thClasses)
+    ? klass(props.thClasses[index])
+    : typeof props.thClasses === "function"
+    ? klass(props.thClasses(label, index))
+    : [];
+  return [...base, ...fromHeader, ...extra];
+}
+
+/** Optional extra attrs per <th>, via prop thAttrs */
+function thAttrsFor(index: number, label: string, fromHeader: Record<string, unknown>): Record<string, unknown> {
+  const extra =
+    typeof props.thAttrs === "function"
+      ? (props.thAttrs as (label: string, index: number) => Record<string, unknown>)(label, index)
+      : props.thAttrs ?? {};
+  return { ...fromHeader, ...extra };
+}
+
+/** Single-source normalization (rows + rowComponent) */
 const singleSource = computed<RowSource<any> | null>(() => {
   if (props.rows && props.rowComponent) {
     return { items: props.rows, rowComponent: props.rowComponent };
@@ -81,6 +106,7 @@ const singleSource = computed<RowSource<any> | null>(() => {
   return null;
 });
 
+/** Final sources with offsets and safe key */
 const normalizedSources = computed(() => {
   const base: RowSource<any>[] = [];
   if (singleSource.value) base.push(singleSource.value);
@@ -98,6 +124,7 @@ const normalizedSources = computed(() => {
 
 const colCount = computed(() => props.headers?.length ?? undefined);
 
+/** Helpers for row classes & props */
 function rowClasses(src: RowSource<any> & { offset: number }, item: unknown, i: number): string[] {
   const base = klass(props.baseRowClass);
   const extra = typeof src.rowClass === "function" ? (src.rowClass as any)(item, i, src.offset + i) : src.rowClass;
@@ -110,15 +137,3 @@ function propsFor(src: RowSource<any> & { offset: number }, item: unknown, i: nu
   return typeof src.rowProps === "function" ? (src.rowProps as any)(item, i, rowIdx) : src.rowProps;
 }
 </script>
-
-<style scoped>
-table {
-  border-collapse: separate;
-  border-spacing: 0;
-  width: 100%;
-}
-th,
-td {
-  vertical-align: middle;
-}
-</style>
