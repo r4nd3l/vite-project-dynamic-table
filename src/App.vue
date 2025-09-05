@@ -5,11 +5,11 @@
     <TableFrame
       :headers="['First', 'Second', 'Third']"
       :sources="userSources"
-      :thClasses="['text-left text-red-600', 'text-center', 'text-right uppercase']"
+      :thClasses="['text-red-600', 'text-center', 'text-right uppercase']"
       :thAttrs="(label, i) => (i === 2 ? { 'data-col': 'third', title: `Column: ${label}` } : {})"
       tableClass="min-w-max border border-gray-300 rounded-md"
       theadClass="bg-gray-400"
-      thClass="p-2 text-left text-white"
+      thClass=""
       tbodyClass="divide-y divide-gray-100"
       baseRowClass="hover:bg-gray-50"
       tdClass="p-2"
